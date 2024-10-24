@@ -1,0 +1,12 @@
+PyQt6==6.9.1
+PyQt6-WebEngine==6.9.0
+anki==25.7.5
+aqt==25.7.5
+pytest-integration==0.2.3
+pytest-mock==3.14.1
+pytest==8.4.1
+pytest-cov==6.2.1
+python-dotenv==1.1.1
+requests==2.32.4
+basedpyright==1.31.1
+ruff==0.12.8

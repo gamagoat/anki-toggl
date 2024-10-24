@@ -1,0 +1,221 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 3 * * 1' # Weekly security scan on Mondays
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.9"
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.repo.private == false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+
+  lint:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run basedpyright type checking
+        run: |
+          python -m basedpyright src/ --level=error --warnings
+          python -m basedpyright src/ --level=warning --warnings
+
+      - name: Run ruff linting and formatting check
+        run: ruff check src/ tests/ --output-format=concise
+
+      - name: Run ruff format check
+        run: ruff format --check src/ tests/
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: |
+          export QT_QPA_PLATFORM=offscreen
+          pytest tests/ -v --tb=short --without-integration --cov=src --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  security:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install safety bandit
+
+      - name: Run safety check
+        run: safety check --json --output safety-report.json || true
+
+      - name: Run bandit security scan
+        run: bandit -r src/ scripts/ -x scripts/copy_addon_to_addons21.py -f json -o bandit-report.json || true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            safety-report.json
+            bandit-report.json
+          retention-days: 30
+
+      - name: Comment on PR with security results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## Security Scan Results\n\n';
+            if (fs.existsSync('safety-report.json')) {
+              const safetyData = JSON.parse(fs.readFileSync('safety-report.json', 'utf8'));
+              if (Array.isArray(safetyData) && safetyData.length > 0) {
+                comment += '⚠️ **Safety found vulnerabilities:**\n';
+                safetyData.forEach(vuln => {
+                  comment += `- ${vuln.package}: ${vuln.vulnerability_id} (${vuln.severity})\n`;
+                });
+              } else {
+                comment += '✅ **No safety vulnerabilities found**\n';
+              }
+            }
+            if (fs.existsSync('bandit-report.json')) {
+              const banditData = JSON.parse(fs.readFileSync('bandit-report.json', 'utf8'));
+              if (banditData.results && banditData.results.length > 0) {
+                comment += '\n⚠️ **Bandit found security issues:**\n';
+                banditData.results.forEach(issue => {
+                  comment += `- ${issue.filename}:${issue.line_number} - ${issue.issue_text} (${issue.severity})\n`;
+                });
+              } else {
+                comment += '\n✅ **No bandit security issues found**\n';
+              }
+            }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  release-artifacts:
+    name: Build .ankiaddon Artifact
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/tags/'))
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Build .ankiaddon
+        run: |
+          python scripts/build_ankiaddon.py
+
+      - name: Upload .ankiaddon artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: anki-addon
+          path: dist/*.ankiaddon
+          retention-days: 30
+
+  publish-on-tag:
+    name: Attach Artifact to GitHub Release (on tag)
+    runs-on: ubuntu-latest
+    needs: [release-artifacts]
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: anki-addon
+
+      - name: Create GitHub Release and upload asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "*.ankiaddon"
+          generate_release_notes: true

@@ -1,0 +1,16 @@
+{
+    "pythonVersion": "3.9",
+    "typeCheckingMode": "basic",
+    "stubPath": "typings",
+    "exclude": [
+        "venv",
+        ".pytest_cache",
+        "tests"
+    ],
+    "reportMissingImports": "warning",
+    "reportMissingTypeStubs": "warning",
+    "reportUnusedImport": "warning",
+    "reportUnusedClass": "warning",
+    "reportUnusedFunction": "warning",
+    "reportUnusedVariable": "warning"
+}

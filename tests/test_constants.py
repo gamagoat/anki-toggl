@@ -1,0 +1,67 @@
+"""
+Test-specific constants for the Anki Toggl add-on test suite.
+
+This module centralizes test data and magic numbers used throughout the tests
+to ensure consistency and make test maintenance easier.
+"""
+
+# Test IDs and identifiers
+TEST_WORKSPACE_ID = 12345
+TEST_PROJECT_ID = 67890
+TEST_API_TOKEN = "testtoken1234567890abcdef12345678"
+TEST_DESCRIPTION = "Test Description"
+TEST_ENTRY_ID = 99999
+
+# Test time durations (in seconds)
+TEST_DURATION_1_HOUR = 3600
+TEST_DURATION_30_MIN = 1800
+TEST_DURATION_40_MIN = 2400
+TEST_DURATION_50_MIN = 3000
+TEST_DURATION_20_MIN = 1200
+TEST_DURATION_45_MIN = 2700
+TEST_DURATION_1_MIN = 60
+TEST_DURATION_2_MIN = 120
+
+# Test time durations (in milliseconds)
+TEST_DURATION_1_MIN_MS = 60000
+TEST_DURATION_2_MIN_MS = 120000
+TEST_DURATION_5_MIN_MS = 300000
+
+# Test workspace and project IDs (clearly fake values)
+TEST_REAL_WORKSPACE_ID = 999999999
+TEST_REAL_PROJECT_ID = 888888888
+TEST_DELETED_ENTRY_ID = 777777777
+
+# Test response IDs
+TEST_RESPONSE_ID = 12345
+TEST_UPDATED_ENTRY_ID = 54321
+TEST_ENTRY_ID_1 = 123
+TEST_ENTRY_ID_2 = 456
+TEST_DIFFERENT_PROJECT_ID = 99999
+TEST_DURATION_2_HOURS = 7200
+
+# Test numeric values
+TEST_SESSION_COUNT = 10
+TEST_SESSION_COUNT_LARGE = 20
+TEST_REVIEW_COUNT = 11
+
+# Core module test values
+TEST_CORE_WORKSPACE_ID = 1
+TEST_CORE_PROJECT_ID = 2
+TEST_CORE_DESCRIPTION = "desc"
+TEST_CORE_TOKEN = "token"
+
+# String length test values
+TEST_LONG_DESCRIPTION_LENGTH = 101  # Exceeds 100-char limit
+
+# Date/time test values (timestamps in milliseconds)
+TEST_TIMESTAMP_FIRST_REVIEW = 1642233600000
+TEST_TIMESTAMP_LAST_REVIEW = 1642237200000
+TEST_TIMESTAMP_START_OF_DAY = 1642204800
+TEST_ANKI_TIMESTAMP_1 = 1728313200001
+TEST_ANKI_TIMESTAMP_2 = 1000
+
+# Mock response data
+MOCK_RESPONSE_OK_TEXT = "OK"
+MOCK_RESPONSE_ERROR_TEXT = "Bad Request"
+MOCK_RESPONSE_NOT_FOUND_TEXT = "Not Found"
