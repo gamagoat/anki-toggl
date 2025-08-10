@@ -3,8 +3,8 @@ import json
 import os
 import shutil
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 DEFAULT_DEST = Path.home() / "Library/Application Support/Anki2/addons21/anki_toggl_dev"
 SRC_DIR = Path(__file__).parent.parent / "src"
