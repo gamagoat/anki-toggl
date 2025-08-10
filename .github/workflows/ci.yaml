@@ -107,6 +107,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -122,13 +123,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install safety bandit
+          pip install safety
 
       - name: Run safety check
         run: safety check --json --output safety-report.json || true
 
-      - name: Run bandit security scan
-        run: bandit -r src/ scripts/ -x scripts/copy_addon_to_addons21.py -f json -o bandit-report.json || true
+      - name: Perform Bandit Analysis
+        uses: PyCQA/bandit-action@v1
+        with:
+          severity: high
+          confidence: high
+          exclude: ".svn,CVS,.bzr,.hg,.git,__pycache__,.tox,.eggs,*.egg,venv,dist,build,scripts/copy_addon_to_addons21.py"
+          targets: "src,scripts"
 
       - name: Upload security reports
         uses: actions/upload-artifact@v4
@@ -137,44 +143,7 @@ jobs:
           name: security-reports
           path: |
             safety-report.json
-            bandit-report.json
           retention-days: 30
-
-      - name: Comment on PR with security results
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            let comment = '## Security Scan Results\n\n';
-            if (fs.existsSync('safety-report.json')) {
-              const safetyData = JSON.parse(fs.readFileSync('safety-report.json', 'utf8'));
-              if (Array.isArray(safetyData) && safetyData.length > 0) {
-                comment += '⚠️ **Safety found vulnerabilities:**\n';
-                safetyData.forEach(vuln => {
-                  comment += `- ${vuln.package}: ${vuln.vulnerability_id} (${vuln.severity})\n`;
-                });
-              } else {
-                comment += '✅ **No safety vulnerabilities found**\n';
-              }
-            }
-            if (fs.existsSync('bandit-report.json')) {
-              const banditData = JSON.parse(fs.readFileSync('bandit-report.json', 'utf8'));
-              if (banditData.results && banditData.results.length > 0) {
-                comment += '\n⚠️ **Bandit found security issues:**\n';
-                banditData.results.forEach(issue => {
-                  comment += `- ${issue.filename}:${issue.line_number} - ${issue.issue_text} (${issue.severity})\n`;
-                });
-              } else {
-                comment += '\n✅ **No bandit security issues found**\n';
-              }
-            }
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
 
   release-artifacts:
     name: Build .ankiaddon Artifact
