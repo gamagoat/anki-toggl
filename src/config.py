@@ -43,6 +43,20 @@ logger = get_module_logger("config")
 mw: Optional[Any] = None
 
 
+def _resolve_config_key() -> str:
+    """Return the correct config key for this add-on in the running environment."""
+    # Prefer Anki's mapping from module -> add-on folder when available
+    try:
+        if mw is not None and hasattr(mw, "addonManager"):
+            resolved = mw.addonManager.addonFromModule(__name__)  # type: ignore[attr-defined]
+            if isinstance(resolved, str) and resolved:
+                return resolved
+    except Exception as e:
+        logger.debug(f"Failed to resolve config key via addonManager: {e}")
+    # Fallback to the folder name where this file resides
+    return CONFIG_KEY
+
+
 def validate_config(config: dict[str, object]) -> dict[str, object]:
     for field in REQUIRED_FIELDS:
         if not config.get(field):
@@ -85,11 +99,12 @@ def get_config() -> dict[str, object]:
             "Anki main window (mw) is not available, returning default config."
         )
         return DEFAULT_CONFIG.copy()
-    logger.debug(f"Using config key: {CONFIG_KEY}")
-    config_dict = mw.addonManager.getConfig(CONFIG_KEY)
+    key = _resolve_config_key()
+    logger.debug(f"Using config key: {key}")
+    config_dict = mw.addonManager.getConfig(key)
     if not config_dict:
         logger.info("No config found; saving default config.")
-        mw.addonManager.writeConfig(CONFIG_KEY, DEFAULT_CONFIG.copy())
+        mw.addonManager.writeConfig(key, DEFAULT_CONFIG.copy())
         return DEFAULT_CONFIG.copy()
     # Merge with defaults and coalesce blank optional fields
     merged = DEFAULT_CONFIG.copy()
@@ -117,7 +132,8 @@ def save_config(config: dict[str, object]) -> bool:
     if mw is None:
         logger.debug("Anki main window (mw) is not available, skipping config save.")
         return False
-    logger.debug(f"Using config key: {CONFIG_KEY}")
+    key = _resolve_config_key()
+    logger.debug(f"Using config key: {key}")
     # Warn about missing fields but still persist for user flexibility
     missing_required = [
         f for f in REQUIRED_FIELDS if f not in config or not config.get(f)
@@ -130,7 +146,7 @@ def save_config(config: dict[str, object]) -> bool:
         logger.warning(f"Config being saved is missing fields: {missing}")
     logger.debug(f"Saving config: {_sanitize_config_for_logging(config)}")
     try:
-        mw.addonManager.writeConfig(CONFIG_KEY, config)
+        mw.addonManager.writeConfig(key, config)
         return True
     except (PermissionError, OSError) as e:
         logger.error(f"Failed to save config due to file system error: {e}")

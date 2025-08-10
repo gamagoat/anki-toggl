@@ -23,6 +23,11 @@ def get_addon_name_and_version() -> tuple[str, str]:
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
             # meta.json may not include version; allow missing
             version = str(meta.get("mod", version))  # use mod timestamp as surrogate
-    except Exception:
-        pass
+    except Exception as e:
+        # Best-effort; keep default version if meta.json parsing fails
+        import logging
+
+        logging.getLogger("manifest_utils").debug(
+            f"Failed to derive version from meta.json: {e}"
+        )
     return name, version
