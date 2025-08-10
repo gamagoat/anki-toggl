@@ -1,8 +1,7 @@
-mode: Mainline
+workflow: TrunkBased/preview1
 branches:
   main:
     regex: ^main$
     increment: Patch
-    isMainline: true
 commit-message-incrementing: Enabled
 
