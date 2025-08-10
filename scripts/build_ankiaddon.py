@@ -2,13 +2,10 @@
 from __future__ import annotations
 
 import argparse
-import io
 import json
-import os
 import time
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
-
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = REPO_ROOT / "src"
