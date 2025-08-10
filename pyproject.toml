@@ -72,6 +72,9 @@ known-first-party = ["src"]
 "src/core.py" = ["ARG001"]
 "src/security_utils.py" = ["ARG001"]
 
+# Type stubs: allow star-imports for re-exports
+"typings/aqt/__init__.pyi" = ["F403"]
+
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
 quote-style = "double"
