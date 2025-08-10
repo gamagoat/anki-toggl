@@ -8,6 +8,7 @@ MS_TO_SECONDS_DIVISOR = 1000
 # Default values
 DEFAULT_DESCRIPTION = "Anki Review Session"
 DEFAULT_USER_AGENT = "AnkiToggl"
+USER_AGENT_TEMPLATE = "{name}/{version} (+AnkiAddOn)"
 DEFAULT_TIMEZONE = "UTC"
 
 # HTTP status codes

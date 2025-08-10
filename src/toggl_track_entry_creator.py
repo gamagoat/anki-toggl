@@ -10,8 +10,10 @@ from .constants import (
     REQUEST_READ_TIMEOUT_S,
     TOGGL_API_BASE_URL,
     TOGGL_USER_ENDPOINT,
+    USER_AGENT_TEMPLATE,
 )
 from .logger import get_module_logger
+from .manifest_utils import get_addon_name_and_version
 from .timezone import Timezone
 
 
@@ -53,9 +55,11 @@ class TogglTrackEntryCreator:
 
     def _headers(self) -> dict[str, str]:
         token = b64encode(f"{self.api_token}:api_token".encode()).decode("utf-8")
+        name, version = get_addon_name_and_version()
         return {
             "Authorization": f"Basic {token}",
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT_TEMPLATE.format(name=name, version=version),
         }
 
     def _request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
