@@ -390,6 +390,72 @@ class TestConfig:
         expected = os.path.basename(os.path.dirname(os.path.abspath("src/config.py")))
         assert expected == CONFIG_KEY
 
+    @pytest.mark.unit
+    def test_get_config_uses_addon_manager_mapping_key(self) -> None:
+        """get_config should resolve key via addonFromModule(__name__) when available."""
+        from src import config as cfg
+
+        mock_mw = Mock()
+        mock_mw.addonManager.addonFromModule.return_value = "addon-folder-xyz"
+        # Provide a minimal valid config to avoid default-save path
+        mock_mw.addonManager.getConfig.return_value = {
+            "api_token": TEST_API_TOKEN,
+            "workspace_id": str(TEST_WORKSPACE_ID),
+            "project_id": str(TEST_PROJECT_ID),
+        }
+
+        with patch("src.config.mw", mock_mw):
+            loaded = cfg.get_config()
+            assert loaded["api_token"] == TEST_API_TOKEN
+            mock_mw.addonManager.addonFromModule.assert_called_once()
+            # Should use resolved key for reads
+            mock_mw.addonManager.getConfig.assert_called_with("addon-folder-xyz")
+
+    @pytest.mark.unit
+    def test_save_config_uses_addon_manager_mapping_key(self) -> None:
+        """save_config should use addonFromModule(__name__) result for writes."""
+        from src import config as cfg
+
+        mock_mw = Mock()
+        mock_mw.addonManager.addonFromModule.return_value = "addon-folder-xyz"
+
+        config = {
+            "api_token": TEST_API_TOKEN,
+            "workspace_id": TEST_WORKSPACE_ID,
+            "project_id": TEST_PROJECT_ID,
+        }
+
+        with patch("src.config.mw", mock_mw):
+            ok = cfg.save_config(cast("dict[str, object]", config))
+            assert ok is True
+            mock_mw.addonManager.writeConfig.assert_called_with(
+                "addon-folder-xyz", config
+            )
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize("returned", [None, "", Exception("boom")])
+    def test_resolve_config_key_fallbacks(self, returned: object) -> None:
+        """When addonFromModule fails/empty, fall back to CONFIG_KEY (folder name)."""
+        from src import config as cfg
+
+        mock_mw = Mock()
+        if isinstance(returned, Exception):
+            mock_mw.addonManager.addonFromModule.side_effect = returned
+        else:
+            mock_mw.addonManager.addonFromModule.return_value = returned  # type: ignore[assignment]
+        mock_mw.addonManager.getConfig.return_value = None
+
+        with patch("src.config.mw", mock_mw):
+            # Trigger read which also triggers default write path
+            loaded = cfg.get_config()
+            assert isinstance(loaded, dict)
+            # Should have fallen back to CONFIG_KEY (folder name 'src')
+            fallback_key = CONFIG_KEY
+            mock_mw.addonManager.getConfig.assert_called_with(fallback_key)
+            mock_mw.addonManager.writeConfig.assert_called_with(
+                fallback_key, DEFAULT_CONFIG.copy()
+            )
+
     def test_get_config_uses_default_for_missing_optional_fields(self) -> None:
         from src.constants import DEFAULT_DESCRIPTION, DEFAULT_TIMEZONE
 

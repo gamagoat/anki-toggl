@@ -31,7 +31,7 @@ SYNC_STATE_DIR = "sync_state"
 SYNC_STATE_FILE = "sync_state.json"
 
 # Configuration field names
-CONFIG_API_TOKEN = "api_token"  # nosec B105: configuration key name, not a secret
+CONFIG_API_TOKEN = "api_token"  # nosec B105
 CONFIG_WORKSPACE_ID = "workspace_id"
 CONFIG_PROJECT_ID = "project_id"
 CONFIG_DESCRIPTION = "description"
