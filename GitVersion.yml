@@ -1,7 +1,0 @@
-workflow: TrunkBased/preview1
-branches:
-  main:
-    regex: ^main$
-    increment: Patch
-commit-message-incrementing: Enabled
-
