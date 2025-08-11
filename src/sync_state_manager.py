@@ -55,6 +55,9 @@ class SyncStateManager:
                 with open(self.state_file, encoding="utf-8") as f:
                     data = json.load(f)
                     if isinstance(data, dict):
+                        self.logger.debug(
+                            f"Loaded sync state from {self.state_file} with {len(data)} top-level keys"
+                        )
                         return data
                     else:
                         return {}

@@ -172,38 +172,38 @@ class ConfigDialog:
         for field_name, widget in self.fields.items():
             value = config.get(field_name, "")
 
-            if hasattr(widget, "setText") and hasattr(widget, "text"):
-                # QLineEdit
-                widget.setText(str(value) if value else "")
+            if hasattr(widget, "setChecked") and hasattr(widget, "isChecked"):
+                # QCheckBox
+                widget.setChecked(bool(value))
             elif hasattr(widget, "setPlainText") and hasattr(widget, "toPlainText"):
                 # QTextEdit
                 widget.setPlainText(str(value) if value else "")
-            elif hasattr(widget, "setChecked") and hasattr(widget, "isChecked"):
-                # QCheckBox
-                widget.setChecked(bool(value))
             elif hasattr(widget, "currentText") and hasattr(widget, "findText"):
                 # QComboBox
                 if value:
                     index = widget.findText(str(value))
                     if index >= 0:
                         widget.setCurrentIndex(index)
+            elif hasattr(widget, "setText") and hasattr(widget, "text"):
+                # QLineEdit
+                widget.setText(str(value) if value else "")
 
     def save_config(self):
         """Save configuration from the dialog."""
         config_dict = {}
         for field_name, widget in self.fields.items():
-            if hasattr(widget, "setText") and hasattr(widget, "text"):
-                # QLineEdit
-                config_dict[field_name] = widget.text().strip()
+            if hasattr(widget, "setChecked") and hasattr(widget, "isChecked"):
+                # QCheckBox
+                config_dict[field_name] = widget.isChecked()
             elif hasattr(widget, "setPlainText") and hasattr(widget, "toPlainText"):
                 # QTextEdit
                 config_dict[field_name] = widget.toPlainText().strip()
-            elif hasattr(widget, "setChecked") and hasattr(widget, "isChecked"):
-                # QCheckBox
-                config_dict[field_name] = widget.isChecked()
             elif hasattr(widget, "currentText") and hasattr(widget, "findText"):
                 # QComboBox
                 config_dict[field_name] = widget.currentText().strip()
+            elif hasattr(widget, "setText") and hasattr(widget, "text"):
+                # QLineEdit
+                config_dict[field_name] = widget.text().strip()
         try:
             config = validate_config(config_dict)
             if save_config(config):

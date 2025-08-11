@@ -29,7 +29,7 @@ def _iter_files_to_package() -> list[Path]:
         if child.name == "manifest.json":
             # Handled separately to inject fresh mod timestamp
             continue
-        if child.suffix == ".py":
+        if child.suffix in (".py", ".json", ".md"):
             files.append(child)
     return files
 
