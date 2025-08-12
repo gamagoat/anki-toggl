@@ -6,7 +6,9 @@
 
 Sync your daily Anki review time to Toggl Track as a single entry.
 
-This add-on is under active development and may introduce breaking changes.
+<img src="docs/assets/sample-entry.png" alt="Sample Entry" width="600" />
+
+⚠️🛠️ This add-on is under active development and may introduce breaking changes.
 
 ## Toggl Track
 
