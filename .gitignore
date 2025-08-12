@@ -192,7 +192,6 @@ node_modules/
 # tasks/
 
 # Configuration files (user-specific)
-src/config.json
 
 # Local sync state data (runtime)
 src/sync_state/

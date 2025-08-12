@@ -118,6 +118,10 @@ class SyncManager:
             workspace_id = cast("int", credentials["workspace_id"])
             project_id = cast("int", credentials["project_id"])
             description = cast("str", credentials["description"])
+            tz_name = getattr(timezone, "name", str(timezone))
+            self.logger.debug(
+                f"Auto-sync params: workspace_id={workspace_id}, project_id={project_id}, description='{description}', timezone={tz_name}"
+            )
             response = sync_review_time_to_toggl(
                 api_token,
                 workspace_id,
@@ -136,6 +140,8 @@ class SyncManager:
                 self.logger.warning(
                     f"Auto-sync: Sync completed but got unexpected response: {response}"
                 )
+            if hasattr(response, "status_code"):
+                self.logger.debug(f"Auto-sync response status: {response.status_code}")
         except TogglSyncError as e:
             self.logger.error(
                 "Network error during auto-sync: %s", str(e), exc_info=True
