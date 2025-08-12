@@ -14,21 +14,21 @@ _logger_configured = False
 
 
 def get_module_logger(module_name: str = "anki_toggl") -> logging.Logger:
-    """Return a named logger; handlers are managed on the root logger."""
+    """Return a named logger for the addon module."""
     setup_logger()
-    return logging.getLogger(module_name)
+    return logging.getLogger(f"anki_toggl.{module_name}")
 
 
 def setup_logger() -> logging.Logger:
     global _logger_configured
 
-    logger = logging.getLogger()
+    logger = logging.getLogger("anki_toggl")
 
     if _logger_configured:
         return logger
 
-    logger.setLevel(logging.INFO)
-    logger.handlers.clear()
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = True
 
     formatter = logging.Formatter(
         LOG_MESSAGE_FORMAT,
