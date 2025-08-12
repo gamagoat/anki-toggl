@@ -69,7 +69,7 @@ def get_review_session(mw: Any, timezone: Timezone) -> SyncSession:
 
     end_time = last_review_time
 
-    return SyncSession(
+    session = SyncSession(
         start_time=start_time,
         end_time=end_time,
         duration_seconds=duration_seconds,
@@ -77,6 +77,12 @@ def get_review_session(mw: Any, timezone: Timezone) -> SyncSession:
         first_review_time=first_review_time,
         last_review_time=last_review_time,
     )
+    logger = get_module_logger("core.get_review_session")
+    logger.debug(
+        f"Session summary: duration_s={duration_seconds}, count={session_count}, "
+        f"first={first_review_time}, last={last_review_time}, start={start_time}, end={end_time}"
+    )
+    return session
 
 
 class SyncSkipped(Exception):
@@ -139,6 +145,9 @@ def sync_to_toggl(
     has_been_synced = sync_state_manager.has_been_synced(
         target_date, workspace_id, project_id, description
     )
+    logger.debug(
+        f"has_been_synced={has_been_synced} for {target_date} ({workspace_id}/{project_id}/{description})"
+    )
     update_start_time = session.start_time
     action = None
     toggl_id: Optional[int] = None
@@ -193,20 +202,27 @@ def sync_to_toggl(
                             found_id = None
                     if isinstance(found_id, int):
                         toggl_id = found_id
+                        logger.debug(
+                            f"Performing update for toggl_id={found_id} starting {update_start_time}"
+                        )
                         response = _update_toggl_entry(
                             toggl_creator, found_id, session, update_start_time
                         )
                         action = "update"
                     else:
+                        logger.debug("No suitable existing entry ID; performing create")
                         response = _create_toggl_entry(toggl_creator, session)
                         action = "create"
                 else:
+                    logger.debug("No existing entry stored locally; performing create")
                     response = _create_toggl_entry(toggl_creator, session)
                     action = "create"
         else:
+            logger.debug("No prior sync recorded; performing create")
             response = _create_toggl_entry(toggl_creator, session)
             action = "create"
     else:
+        logger.debug("First sync for date; performing create")
         response = _create_toggl_entry(toggl_creator, session)
         action = "create"
 
@@ -226,6 +242,9 @@ def sync_to_toggl(
         duration_seconds=session.duration_seconds,
         toggl_id=toggl_id,
         action=action,
+    )
+    logger.debug(
+        f"Sync action result: action={action}, toggl_id={toggl_id}, status={getattr(response, 'status_code', 'N/A')}"
     )
     return response
 

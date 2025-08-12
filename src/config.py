@@ -42,18 +42,33 @@ logger = get_module_logger("config")
 # This placeholder is populated at runtime by `src.__init__` or tests may patch it.
 mw: Optional[Any] = None
 
+# Cache the resolved config key to ensure consistency
+_cached_config_key: Optional[str] = None
+
 
 def _resolve_config_key() -> str:
     """Return the correct config key for this add-on in the running environment."""
-    # Prefer Anki's mapping from module -> add-on folder when available
+    global _cached_config_key
+
+    # Return cached key if already resolved
+    if _cached_config_key is not None:
+        logger.debug(f"Using cached config key: {_cached_config_key}")
+        return _cached_config_key
+
+    # Try to resolve via addonManager first
     try:
         if mw is not None and hasattr(mw, "addonManager"):
             resolved = mw.addonManager.addonFromModule(__name__)  # type: ignore[attr-defined]
             if isinstance(resolved, str) and resolved:
+                _cached_config_key = resolved
+                logger.debug(f"Config key resolved via addonManager: {resolved}")
                 return resolved
     except Exception as e:
         logger.debug(f"Failed to resolve config key via addonManager: {e}")
-    # Fallback to the folder name where this file resides
+
+    # Fallback to folder name, but cache it for consistency
+    _cached_config_key = CONFIG_KEY
+    logger.debug(f"Config key using fallback: {CONFIG_KEY}")
     return CONFIG_KEY
 
 
@@ -147,6 +162,7 @@ def save_config(config: dict[str, object]) -> bool:
     logger.debug(f"Saving config: {_sanitize_config_for_logging(config)}")
     try:
         mw.addonManager.writeConfig(key, config)
+        logger.debug(f"Config written under key: {key}")
         return True
     except (PermissionError, OSError) as e:
         logger.error(f"Failed to save config due to file system error: {e}")
@@ -167,12 +183,16 @@ def get_toggl_credentials() -> dict[str, object]:
         raise ConfigValidationError(str(e))
     from typing import cast
 
-    return {
+    creds = {
         CONFIG_API_TOKEN: str(validated[CONFIG_API_TOKEN]),
         CONFIG_WORKSPACE_ID: cast("int", validated[CONFIG_WORKSPACE_ID]),
         CONFIG_PROJECT_ID: cast("int", validated[CONFIG_PROJECT_ID]),
         CONFIG_DESCRIPTION: str(validated[CONFIG_DESCRIPTION]),
     }
+    logger.debug(
+        f"Using credentials (sanitized): {_sanitize_config_for_logging(creds)}"
+    )
+    return creds
 
 
 def is_configured() -> bool:

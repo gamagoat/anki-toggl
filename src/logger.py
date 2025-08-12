@@ -27,7 +27,7 @@ def setup_logger() -> logging.Logger:
     if _logger_configured:
         return logger
 
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     logger.handlers.clear()
 
     formatter = logging.Formatter(
@@ -36,7 +36,8 @@ def setup_logger() -> logging.Logger:
     )
 
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
+    level = logging.DEBUG
+    console_handler.setLevel(level)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
@@ -48,7 +49,7 @@ def setup_logger() -> logging.Logger:
         log_file = logs_dir / f"{LOG_FILE_PREFIX}{timestamp}.log"
 
         file_handler = logging.FileHandler(log_file)
-        file_handler.setLevel(logging.INFO)
+        file_handler.setLevel(level)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 

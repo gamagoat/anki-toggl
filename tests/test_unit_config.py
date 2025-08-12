@@ -27,6 +27,12 @@ from tests.test_constants import TEST_API_TOKEN, TEST_PROJECT_ID, TEST_WORKSPACE
 class TestConfig:
     """Test configuration management functions."""
 
+    def setup_method(self):
+        """Reset config key cache before each test."""
+        import src.config as cfg
+
+        cfg._cached_config_key = None  # type: ignore[attr-defined]
+
     @pytest.mark.unit
     def test_get_config_with_no_mw(self) -> None:
         """Test get_config when mw is None."""

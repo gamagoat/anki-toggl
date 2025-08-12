@@ -35,10 +35,8 @@ QT_QPA_PLATFORM=offscreen pytest tests/ -v --tb=short --without-integration --co
 ## ci
 
 ```bash
+mask test
+mask bandit
 mask based
 mask ruff
-mask bandit
-mask test
 ```
-
-
