@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.4](https://github.com/gamagoat/anki-toggl/compare/v0.0.3...v0.0.4) (2025-08-12)
+
+
+### Bug Fixes
+
+* **logging:** use namespaced addon logger and avoid root handlers; enable propagation for caplog capture ([#17](https://github.com/gamagoat/anki-toggl/issues/17)) ([4903564](https://github.com/gamagoat/anki-toggl/commit/49035644b8fac1599908f66348911e002706324e))
+
+
+### Documentation
+
+* add screenshot of a sample entry ([#15](https://github.com/gamagoat/anki-toggl/issues/15)) ([20db4b6](https://github.com/gamagoat/anki-toggl/commit/20db4b6e3c685a97be776529221801c322dd7e7b))
+
 ## [0.0.3](https://github.com/gamagoat/anki-toggl/compare/v0.0.2...v0.0.3) (2025-08-12)
 
 
