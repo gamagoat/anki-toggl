@@ -21,16 +21,22 @@ def _load_manifest() -> dict:
 
 def _iter_files_to_package() -> list[Path]:
     files: list[Path] = []
+
     for child in SRC_DIR.iterdir():
-        if child.is_dir():
-            # Top-level subdirectories are not packaged by default for this add-on
-            # (adjust here if you later add assets under subfolders)
-            continue
         if child.name == "manifest.json":
-            # Handled separately to inject fresh mod timestamp
             continue
+
+        if child.is_dir():
+            # Package vendored dependencies (e.g. vendor/tzdata)
+            if child.name == "vendor":
+                for p in child.rglob("*"):
+                    if p.is_file():
+                        files.append(p)
+            continue
+
         if child.suffix in (".py", ".json", ".md"):
             files.append(child)
+
     return files
 
 
@@ -40,7 +46,6 @@ def _write_manifest_into_zip(zf: ZipFile, base_manifest: dict) -> None:
     manifest.setdefault("package", "anki_toggl")
     # Update mod to current epoch seconds for outside-AnkiWeb installs; harmless on AnkiWeb
     manifest["mod"] = int(time.time())
-
     data = json.dumps(manifest, separators=(",", ":"))
     zf.writestr("manifest.json", data.encode("utf-8"), compress_type=ZIP_DEFLATED)
 
@@ -56,7 +61,8 @@ def build(output_path: Path) -> None:
         _write_manifest_into_zip(zf, manifest)
         for file_path in files:
             # arcname relative to src/ so there's no top-level directory
-            zf.write(file_path, arcname=file_path.name)
+           zf.write(file_path, arcname=str(file_path.relative_to(SRC_DIR)))
+
 
 
 def main() -> None:

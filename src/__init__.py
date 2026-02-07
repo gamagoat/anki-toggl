@@ -3,6 +3,14 @@ Anki Toggl Add-on
 
 Automatically syncs your Anki review time to Toggl Track.
 """
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+VENDOR_DIR = Path(__file__).resolve().parent / "vendor"
+if VENDOR_DIR.exists():
+    sys.path.insert(0, str(VENDOR_DIR))
 
 import logging
 from typing import Any
